@@ -3,15 +3,16 @@ import scala.util.Random
 object Positioning extends App {
   val maxX = 20
   val maxY = 20
-  val mine = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX), Random.nextInt(maxY))), 'M')
-  val opp = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX), Random.nextInt(maxY))), 'O')
+  var mine = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX / 2), Random.nextInt(maxY / 2))), 'M')
+  val opp = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX / 2) + maxX / 2, Random.nextInt(maxY / 2) + maxY / 2)), 'O')
   val oppBary = Leeks(Seq(opp.barycentre), 'B')
 
   display(Seq(mine, opp, oppBary))
-  for (speed <- 1 to 20) {
+  for (i <- 1 to 20) {
     println("-" * maxX)
 
-    display(Seq(mine.surround(opp, speed, 5), opp, oppBary))
+    mine = mine.surround(opp, 2, 5)
+    display(Seq(mine, opp, oppBary))
   }
 
   def display(leeks: Seq[Leeks]) {
@@ -30,12 +31,14 @@ object Positioning extends App {
 
     def surround(others: Leeks, speed: Int = 1, distance: Int = 5) = {
       def move(p: Pos) = {
-        val vectBP = others.barycentre - p
-        val ideal = others.barycentre + vectBP * distance / vectBP.norm
-        val vectPI = p - ideal
+        val target = others.positions.minBy(_.dist(barycentre))
+        val closerThanFriends = p.dist(target) <= barycentre.dist(target) - 2
+        val vectBP = target - p
+        val ideal = target + vectBP * distance / vectBP.norm
+        val vectPI = (p - ideal) * (if (closerThanFriends) -0.5 else 1)
         p + vectPI * (speed / vectPI.norm).min(1)
       }
-      copy(positions = positions.map(move))
+      copy(positions = positions.map(p => move(p).round))
     }
   }
   case class Pos(x: Double, y: Double) {
@@ -43,8 +46,7 @@ object Positioning extends App {
     def -(p: Pos) = Pos(p.x - x, p.y - y)
     def /(i: Double) = Pos(x / i, y / i)
     def *(i: Double) = Pos(x * i, y * i)
-    def dist2(p: Pos) = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y)
-    def dist(p: Pos) = math.sqrt(dist2(p))
+    def dist(p: Pos) = (p.x - x).abs + (p.y - y).abs
     def norm = dist(Pos(0, 0))
     def round = Pos(x.toInt, y.toInt)
   }
