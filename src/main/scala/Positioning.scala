@@ -3,8 +3,17 @@ import scala.util.Random
 object Positioning extends App {
   val maxX = 20
   val maxY = 20
-  var mine = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX / 2), Random.nextInt(maxY / 2))), 'M')
-  val opp = Leeks(Seq.fill(4)(Pos(Random.nextInt(maxX / 2) + maxX / 2, Random.nextInt(maxY / 2) + maxY / 2)), 'O')
+  case class Corner(x: Boolean, y: Boolean) {
+    def genPos = {
+      val rx = Random.nextInt(maxX / 2)
+      val ry = Random.nextInt(maxY / 2)
+      Pos(rx + (if (x) maxX / 2 else 0), ry + (if (y) maxY / 2 else 0))
+    }
+    def opposite = Corner(!x, !y)
+  }
+  val myCorner = Corner(Random.nextBoolean, Random.nextBoolean)
+  var mine = Leeks(Seq.fill(4)(myCorner.genPos), 'M')
+  val opp = Leeks(Seq.fill(4)(myCorner.opposite.genPos), 'O')
   val oppBary = Leeks(Seq(opp.barycentre), 'B')
 
   display(Seq(mine, opp, oppBary))
